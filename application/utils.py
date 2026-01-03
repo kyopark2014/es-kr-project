@@ -47,7 +47,7 @@ def load_config():
 
 config = load_config()
 
-accountId = config.get('accountId', "")
+accountId = config.get('accountId')
 if not accountId:
     sts = boto3.client("sts")
     response = sts.get_caller_identity()

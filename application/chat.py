@@ -114,6 +114,7 @@ map_chain = dict()
 checkpointers = dict() 
 memorystores = dict() 
 
+memory_chain = None
 checkpointer = MemorySaver()
 memorystore = InMemoryStore()
 
@@ -734,9 +735,22 @@ def get_rag_prompt(text):
 
     return rag_chain
 
-bedrock_agent_runtime_client = boto3.client("bedrock-agent-runtime", region_name=bedrock_region)
-knowledge_base_id = config['knowledge_base_id']
+if aws_access_key and aws_secret_key:
+    bedrock_agent_runtime_client = boto3.client(
+        "bedrock-agent-runtime",
+        region_name=bedrock_region,
+        aws_access_key_id=aws_access_key,
+        aws_secret_access_key=aws_secret_key,
+        aws_session_token=aws_session_token,
+    )
+else:
+    bedrock_agent_runtime_client = boto3.client(
+        "bedrock-agent-runtime",
+        region_name=bedrock_region
+    )
+knowledge_base_id = config.get('knowledge_base_id')
 number_of_results = 4
+
 def retrieve(query):
     response = bedrock_agent_runtime_client.retrieve(
         retrievalQuery={"text": query},
