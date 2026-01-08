@@ -3732,34 +3732,37 @@ def main():
     try:
         # 1. Create S3 bucket
         s3_bucket_name = create_s3_bucket()
+        logger.info(f"S3 bucket created...")
         
         # 2. Create IAM roles
         knowledge_base_role_arn = create_knowledge_base_role()
         agent_role_arn = create_agent_role()
         ec2_role_arn = create_ec2_role(knowledge_base_role_arn)
+        logger.info(f"IAM roles created...")
         
         # 3. Create secrets
         secret_arns = create_secrets()
+        logger.info(f"Secrets created...")
         
         # 4. Create OpenSearch collection (with EC2 and Knowledge Base roles for data access)
         opensearch_info = create_opensearch_collection(ec2_role_arn, knowledge_base_role_arn)
-        logger.info(f"OpenSearch collection created: {opensearch_info}")
+        logger.info(f"OpenSearch collection created...")
         
         # 4.5. Create Knowledge Base with correct OpenSearch collection        
         knowledge_base_id = create_knowledge_base_with_opensearch(opensearch_info, knowledge_base_role_arn, s3_bucket_name)
-        logger.info(f"Knowledge base created: {knowledge_base_id}")
+        logger.info(f"Knowledge base created...")
         
         # 5. Create VPC
         vpc_info = create_vpc()
-        logger.info(f"VPC created: {vpc_info}")
+        logger.info(f"VPC created...")
         
         # 6. Create ALB
         alb_info = create_alb(vpc_info)
-        logger.info(f"ALB created: {alb_info}")
+        logger.info(f"ALB created...")
         
         # 7. Create CloudFront distribution
         cloudfront_info = create_cloudfront_distribution(alb_info, s3_bucket_name)
-        logger.info(f"CloudFront distribution created: {cloudfront_info}")
+        logger.info(f"CloudFront distribution created...")
         
         # 8. Create EC2 instance
         instance_id = create_ec2_instance(
@@ -3767,11 +3770,11 @@ def main():
             opensearch_info, s3_bucket_name, cloudfront_info["domain"],
             knowledge_base_id
         )
-        logger.info(f"EC2 instance created: {instance_id}")
+        logger.info(f"EC2 instance created...")
         
         # 9. Create ALB target group and listener
         alb_listener_info = create_alb_target_group_and_listener(alb_info, instance_id, vpc_info)
-        logger.info(f"ALB target group and listener created: {alb_listener_info}")
+        logger.info(f"ALB target group and listener created...")
         
         # check whether the applireation is ready
         logger.info(f"Checking if application is ready: {cloudfront_info['domain']}")

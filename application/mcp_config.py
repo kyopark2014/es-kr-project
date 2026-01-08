@@ -62,6 +62,18 @@ def load_config(mcp_type):
                 }
             }
         }
+
+    elif mcp_type == "tavily-search":
+        return {
+            "mcpServers": {
+                "tavily-search": {
+                    "command": "python",
+                    "args": [
+                        f"{workingDir}/mcp_server_tavily.py"
+                    ]
+                }
+            }
+        }
     
     elif mcp_type == "repl_coder":
         return {

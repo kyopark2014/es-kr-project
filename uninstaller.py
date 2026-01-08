@@ -517,6 +517,24 @@ def delete_vpc_resources():
                 if vpcs.get("Vpcs"):
                     remaining_vpcs.append(vpc_id)
                     logger.warning(f"  ⚠ VPC {vpc_id} still exists")
+
+                    # retry VPC deletion
+                    for attempt in range(3):
+                        try:
+                            ec2_client.delete_vpc(VpcId=vpc_id)
+                            logger.info(f"  ✓ VPC deletion initiated: {vpc_id}")
+                            break
+                        except ClientError as e:
+                            if e.response["Error"]["Code"] == "DependencyViolation":
+                                if attempt < 2:
+                                    logger.info(f"    Retrying VPC deletion in 30s: {vpc_id}")
+                                    time.sleep(30)
+                                else:
+                                    logger.warning(f"    Could not delete VPC {vpc_id}: {e}")
+                                    break
+                            else:
+                                logger.warning(f"    Could not delete VPC {vpc_id}: {e}")
+                                break
             except ClientError as e:
                 if e.response["Error"]["Code"] == "InvalidVpcID.NotFound":
                     logger.debug(f"  ✓ VPC {vpc_id} confirmed deleted")
