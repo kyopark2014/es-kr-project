@@ -3746,15 +3746,19 @@ def main():
         
         # 4.5. Create Knowledge Base with correct OpenSearch collection        
         knowledge_base_id = create_knowledge_base_with_opensearch(opensearch_info, knowledge_base_role_arn, s3_bucket_name)
+        logger.info(f"Knowledge base created: {knowledge_base_id}")
         
         # 5. Create VPC
         vpc_info = create_vpc()
+        logger.info(f"VPC created: {vpc_info}")
         
         # 6. Create ALB
         alb_info = create_alb(vpc_info)
+        logger.info(f"ALB created: {alb_info}")
         
         # 7. Create CloudFront distribution
         cloudfront_info = create_cloudfront_distribution(alb_info, s3_bucket_name)
+        logger.info(f"CloudFront distribution created: {cloudfront_info}")
         
         # 8. Create EC2 instance
         instance_id = create_ec2_instance(
@@ -3762,11 +3766,14 @@ def main():
             opensearch_info, s3_bucket_name, cloudfront_info["domain"],
             knowledge_base_id
         )
+        logger.info(f"EC2 instance created: {instance_id}")
         
         # 9. Create ALB target group and listener
         alb_listener_info = create_alb_target_group_and_listener(alb_info, instance_id, vpc_info)
-
+        logger.info(f"ALB target group and listener created: {alb_listener_info}")
+        
         # check whether the applireation is ready
+        logger.info(f"Checking if application is ready: {cloudfront_info['domain']}")
         check_application_ready(cloudfront_info["domain"])        
         
         # Output summary

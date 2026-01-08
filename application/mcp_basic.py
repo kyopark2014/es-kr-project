@@ -2,7 +2,6 @@ import logging
 import sys
 import datetime
 import requests
-import yfinance as yf
 import traceback
 import json
 import re
@@ -25,11 +24,6 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger("mcp-basic")
-
-aws_access_key = os.environ.get('AWS_ACCESS_KEY_ID')
-aws_secret_key = os.environ.get('AWS_SECRET_ACCESS_KEY')
-aws_session_token = os.environ.get('AWS_SESSION_TOKEN')
-aws_region = os.environ.get('AWS_DEFAULT_REGION', 'us-west-2')
 
 def get_current_time(format: str=f"%Y-%m-%d %H:%M:%S")->str:
     """Returns the current date and time in the specified format"""
@@ -105,29 +99,15 @@ def get_chat(extended_thinking):
         STOP_SEQUENCE = "\n\nHuman:" 
                           
     # bedrock   
-    if aws_access_key and aws_secret_key:
-        boto3_bedrock = boto3.client(
-            service_name='bedrock-runtime',
-            region_name=bedrock_region,
-            aws_access_key_id=aws_access_key,
-            aws_secret_access_key=aws_secret_key,
-            aws_session_token=aws_session_token,
-            config=Config(
-                retries = {
-                    'max_attempts': 30
-                }
-            )
+    boto3_bedrock = boto3.client(
+        service_name='bedrock-runtime',
+        region_name=bedrock_region,
+        config=Config(
+            retries = {
+                'max_attempts': 30
+            }
         )
-    else:
-        boto3_bedrock = boto3.client(
-            service_name='bedrock-runtime',
-            region_name=bedrock_region,
-            config=Config(
-                retries = {
-                    'max_attempts': 30
-                }
-            )
-        )
+    )
     if extended_thinking=='Enable':
         maxReasoningOutputTokens=64000
         logger.info(f"extended_thinking: {extended_thinking}")
@@ -147,6 +127,7 @@ def get_chat(extended_thinking):
             "max_tokens":maxOutputTokens,     
             "temperature":0.1,
             "top_k":250,
+            "top_p":0.9,
             "stop_sequences": [STOP_SEQUENCE]
         }
 
@@ -245,3 +226,42 @@ def get_weather_info(city: str) -> str:
     logger.info(f"weather_str: {weather_str}")                        
     return weather_str
 
+# def stock_data_lookup(ticker, country, period="1mo"):
+#     """
+#     Retrieve accurate stock data for a given ticker.
+#     country: the english country name of the stock
+#     ticker: the ticker to retrieve stock price history for. In South Korea, a ticker is a 6-digit number.
+#     period: the period to retrieve stock price history for. for example, "1mo", "1y", "5y", "max"
+#     return: the information of ticker
+#     """ 
+#     com = re.compile('[a-zA-Z]') 
+#     alphabet = com.findall(ticker)
+#     logger.info(f"alphabet: {alphabet}")
+
+#     logger.info(f"country: {country}")
+
+#     if len(alphabet)==0:
+#         if country == "South Korea":
+#             ticker += ".KS"
+#         elif country == "Japan":
+#             ticker += ".T"
+#     logger.info(f"ticker: {ticker}")
+    
+#     stock = yf.Ticker(ticker)
+    
+#     # get the price history for past 1 month
+#     history = stock.history(period=period)
+#     logger.info(f"history: {history}")
+    
+#     result = f"## Trading History\n{history}"
+#     #history.reset_index().to_json(orient="split", index=False, date_format="iso")    
+    
+#     result += f"\n\n## Financials\n{stock.financials}"    
+#     logger.info(f"financials: {stock.financials}")
+
+#     result += f"\n\n## Major Holders\n{stock.major_holders}"
+#     logger.info(f"major_holders: {stock.major_holders}")
+
+#     logger.info(f"result: {result}")
+
+#     return result
