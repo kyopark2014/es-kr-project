@@ -2,8 +2,6 @@ import logging
 import sys
 import utils
 import os
-import boto3
-import json
 
 logging.basicConfig(
     level=logging.INFO,  # Default to INFO level
@@ -14,14 +12,16 @@ logging.basicConfig(
 )
 logger = logging.getLogger("mcp-config")
 
-workingDir = os.path.dirname(os.path.abspath(__file__))
-config_path = os.path.join(workingDir, "config.json")
+script_dir = os.path.dirname(os.path.abspath(__file__))
+config_path = os.path.join(script_dir, "config.json")
 
 config = utils.load_config()
 logger.info(f"config: {config}")
 
-region = config.get("region", "ap-northeast-2")
-projectName = config.get("projectName", "es")
+region = config["region"] if "region" in config else "us-west-2"
+projectName = config["projectName"] if "projectName" in config else "mcp"
+workingDir = os.path.dirname(os.path.abspath(__file__))
+logger.info(f"workingDir: {workingDir}")
 
 mcp_user_config = {}    
 
@@ -34,13 +34,27 @@ def load_config(mcp_type):
     if mcp_type == "basic":
         return {
             "mcpServers": {
-                "basic": {
+                "search": {
                     "command": "python",
-                    "args": [f"{workingDir}/mcp_server_basic.py"]
+                    "args": [
+                        f"{workingDir}/mcp_server_basic.py"
+                    ]
                 }
             }
         }
     
+    elif mcp_type == "tavily-search":
+        return {
+            "mcpServers": {
+                "tavily-search": {
+                    "command": "python",
+                    "args": [
+                        f"{workingDir}/mcp_server_tavily.py"
+                    ]
+                }
+            }
+        }
+        
     elif mcp_type == "use-aws": 
         return {
             "mcpServers": {
@@ -59,18 +73,6 @@ def load_config(mcp_type):
                 "kb_retriever": {
                     "command": "python",
                     "args": [f"{workingDir}/mcp_server_retrieve.py"]
-                }
-            }
-        }
-
-    elif mcp_type == "tavily-search":
-        return {
-            "mcpServers": {
-                "tavily-search": {
-                    "command": "python",
-                    "args": [
-                        f"{workingDir}/mcp_server_tavily.py"
-                    ]
                 }
             }
         }

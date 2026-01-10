@@ -5,7 +5,6 @@ import mcp_config
 import logging
 import sys
 import os
-import pwd 
 import asyncio
 import qa_agent
 
@@ -18,27 +17,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger("streamlit")
 
-try:
-    user_info = pwd.getpwuid(os.getuid())
-    username = user_info.pw_name
-    home_dir = user_info.pw_dir
-    logger.info(f"Username: {username}")
-    logger.info(f"Home directory: {home_dir}")
-except (ImportError, KeyError):
-    username = "root"
-    logger.info(f"Username: {username}")
-    pass  
-
-if username == "root":
-    environment = "system"
-else:
-    environment = "user"
-logger.info(f"environment: {environment}")
-
 os.environ["DEV"] = "true"  # Skip user confirmation of get_user_input
 
 # title
-st.set_page_config(page_title='ES', page_icon=None, layout="centered", initial_sidebar_state="auto", menu_items=None)
+st.set_page_config(page_title='es-kr', page_icon=None, layout="centered", initial_sidebar_state="auto", menu_items=None)
 
 mode_descriptions = {
     "일상적인 대화": [
@@ -67,10 +49,10 @@ with st.sidebar:
     
     st.markdown(
         "Amazon Bedrock을 이용해 다양한 형태의 대화를 구현합니다." 
-        "여기에서는 MCP를 이용해 RAG를 활용하고, Multi agent를 이용해 다양한 기능을 구현할 수 있습니다." 
+        "여기에서는 MCP를 이용해 RAG를 구현하고, Multi agent를 이용해 다양한 기능을 구현할 수 있습니다." 
         "또한 번역이나 문법 확인과 같은 용도로 사용할 수 있습니다."
-        "주요 코드는 LangChain과 LangGraph를 이용해 구현되었습니다."
-        "상세한 코드는 [Github](https://github.com/kyopark2014/es-project)을 참조하세요."
+        "주요 코드는 LangChain과 LangGraph를 이용해 구현되었습니다.\n"
+        "상세한 코드는 [Github](https://github.com/kyopark2014/lgm-project)을 참조하세요."
     )
 
     st.subheader("🐱 대화 형태")
@@ -88,10 +70,10 @@ with st.sidebar:
 
         # Change radio to checkbox
         mcp_options = [
-            "basic", "use-aws", "knowledge base", "tavily-search", "code interpreter", "terminal", "filesystem", "aws_documentation", "사용자 설정"
+            "basic", "use-aws", "tavily-search", "knowledge base", "code interpreter", "terminal", "filesystem", "aws_documentation","사용자 설정"
         ]
         mcp_selections = {}
-        default_selections = ["basic", "knowledge base", "code interpreter"]
+        default_selections = ["basic", "knowledge base", "code interpreter", "aws_documentation"]
         
         with st.expander("MCP 옵션 선택", expanded=True):
             for option in mcp_options:
@@ -144,6 +126,7 @@ with st.sidebar:
         (
             "Claude 4.5 Haiku",
             "Claude 4.5 Sonnet",
+            "Claude 4.5 Opus",  
             "Claude 4 Opus", 
             "Claude 4 Sonnet", 
             "Claude 3.7 Sonnet", 
@@ -156,8 +139,8 @@ with st.sidebar:
             "Nova Premier", 
             "Nova Pro", 
             "Nova Lite", 
-            "Nova Micro",            
-        ), index=0
+            "Nova Micro",       
+        ), index=4
     )
 
     # debug checkbox
@@ -171,6 +154,12 @@ with st.sidebar:
         select_reasoning = st.checkbox('Reasoning', value=False)
         reasoningMode = 'Enable' if select_reasoning else 'Disable'
         # logger.info(f"reasoningMode: {reasoningMode}")
+
+    # RAG grading
+    # select_grading = st.checkbox('Grading', value=False)
+    # gradingMode = 'Enable' if select_grading else 'Disable'
+    gradingMode = 'Disable'
+    # logger.info(f"gradingMode: {gradingMode}")
 
     uploaded_file = None
     if mode=='이미지 분석':
@@ -250,6 +239,7 @@ if clear_button or "messages" not in st.session_state:
     chat.clear_chat_history()
     st.rerun()    
 
+    
 # Always show the chat input
 if prompt := st.chat_input("메시지를 입력하세요."):
     with st.chat_message("user"):  # display user message in chat message container
@@ -342,6 +332,7 @@ def main():
     # This function is used as an entry point when running as a package
     # The code above is already running the Streamlit app
     pass
+
 
 if __name__ == "__main__":
     # This is already handled by Streamlit

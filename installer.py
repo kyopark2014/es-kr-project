@@ -2922,8 +2922,8 @@ def create_cloudfront_distribution(alb_info: Dict[str, str], s3_bucket_name: str
                 }
     except Exception as e:
         logger.debug(f"Error checking existing distributions: {e}")
-
-    # Check for existing Origin Access Identity or create new one
+    
+    # Check for existing Origin Access Identity or create new one (needed before creating distribution)
     logger.info("  Checking for existing Origin Access Identity for S3...")
     oai_id = None
     oai_canonical_user_id = None
@@ -2984,8 +2984,9 @@ def create_cloudfront_distribution(alb_info: Dict[str, str], s3_bucket_name: str
         logger.error(f"OAI ID: {oai_id}")
         logger.error(f"Bucket Policy: {json.dumps(bucket_policy, indent=2)}")
         raise
-    
-    # Create CloudFront distribution with hybrid ALB + S3 origins
+
+    # Create CloudFront distribution with both ALB and S3 origins (matching provided config format)
+    logger.info("  Creating CloudFront distribution with ALB and S3 origins...")
     distribution_config = {
         "CallerReference": f"{project_name}-{int(time.time())}",
         "Comment": f"CloudFront-for-{project_name}-Hybrid",
@@ -3049,21 +3050,37 @@ def create_cloudfront_distribution(alb_info: Dict[str, str], s3_bucket_name: str
                         "HTTPPort": 80,
                         "HTTPSPort": 443,
                         "OriginProtocolPolicy": "http-only"
-                    }
+                    },
+                    "CustomHeaders": {
+                        "Quantity": 0,
+                        "Items": []
+                    },
+                    "OriginPath": ""
                 },
                 {
                     "Id": f"s3-{project_name}",
                     "DomainName": f"{s3_bucket_name}.s3.{region}.amazonaws.com",
                     "S3OriginConfig": {
                         "OriginAccessIdentity": f"origin-access-identity/cloudfront/{oai_id}"
-                    }
+                    },
+                    "CustomHeaders": {
+                        "Quantity": 0,
+                        "Items": []
+                    },
+                    "OriginPath": ""
                 }
             ]
         },
         "Enabled": True,
         "PriceClass": "PriceClass_200"
     }
-
+    
+    # Log distribution config to verify it matches the expected format
+    logger.info(f"Creating CloudFront distribution with config:")
+    logger.info(f"  Origins: {[origin['Id'] for origin in distribution_config['Origins']['Items']]}")
+    logger.info(f"  DefaultCacheBehavior TargetOriginId: {distribution_config['DefaultCacheBehavior']['TargetOriginId']}")
+    logger.info(f"  CacheBehaviors: {len(distribution_config['CacheBehaviors']['Items'])} behaviors")
+    
     try:
         response = cloudfront_client.create_distribution(DistributionConfig=distribution_config)
         distribution_id = response["Distribution"]["Id"]
@@ -3072,16 +3089,17 @@ def create_cloudfront_distribution(alb_info: Dict[str, str], s3_bucket_name: str
         logger.info(f"✓ CloudFront distribution created (ALB + S3): {distribution_domain}")
         logger.info(f"  Distribution ID: {distribution_id}")
         logger.info(f"  Default origin: ALB {alb_info['dns']}")
-        logger.info(f"  /images/* origin: S3 bucket {s3_bucket_name}")
+        logger.info(f"  /images/* and /docs/* origins: S3 bucket {s3_bucket_name}")
         logger.warning("  Note: CloudFront distribution may take 15-20 minutes to deploy")
-        return {
-            "id": distribution_id,
-            "domain": distribution_domain
-        }
+        
     except ClientError as e:
         logger.error(f"Error creating CloudFront distribution: {e}")
         raise
-
+    
+    return {
+        "id": distribution_id,
+        "domain": distribution_domain
+    }
 
 def get_setup_script(environment: Dict[str, str], git_name: str) -> str:
     """Generate setup script for EC2 instance."""
