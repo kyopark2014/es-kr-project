@@ -303,7 +303,7 @@ def delete_single_vpc(vpc_id: str) -> bool:
                     
                     if endpoint["State"] not in ["deleting"]:
                         try:
-                            ec2_client.delete_vpc_endpoint(VpcEndpointId=endpoint_id)
+                            ec2_client.delete_vpc_endpoints(VpcEndpointIds=[endpoint_id])
                             logger.info(f"    ✓ Initiated deletion of VPC endpoint: {endpoint_id}")
                         except ClientError as endpoint_error:
                             if endpoint_error.response["Error"]["Code"] != "InvalidVpcEndpointId.NotFound":
@@ -1237,7 +1237,7 @@ def delete_vpc_endpoints_and_wait():
         for endpoint in all_endpoints:
             if endpoint["State"] not in ["deleted", "deleting"]:
                 try:
-                    ec2_client.delete_vpc_endpoint(VpcEndpointId=endpoint["VpcEndpointId"])
+                    ec2_client.delete_vpc_endpoints(VpcEndpointIds=[endpoint["VpcEndpointId"]])
                     logger.info(f"  ✓ Initiated deletion of VPC endpoint: {endpoint['VpcEndpointId']}")
                 except ClientError as e:
                     if e.response["Error"]["Code"] != "InvalidVpcEndpointId.NotFound":
