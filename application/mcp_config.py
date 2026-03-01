@@ -113,17 +113,22 @@ def load_config(mcp_type):
         }    
     
     elif mcp_type == "filesystem":
+        parent_dir = os.path.dirname(workingDir)
+        contents_dir = os.path.join(parent_dir, "contents")
         return {
             "mcpServers": {
                 "filesystem": {
                     "command": "npx",
                     "args": [
+                        "-y",
                         "@modelcontextprotocol/server-filesystem",
-                        f"{workingDir}"
+                        f"{parent_dir}",
+                        f"{workingDir}",
+                        f"{contents_dir}"
                     ]
                 }
             }
-        }
+        }    
     
     elif mcp_type == "aws_documentation":
         return {
